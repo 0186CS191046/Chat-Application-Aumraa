@@ -159,7 +159,7 @@ const Userlist = () => {
         className="row"
         style={{ height: "80vh", border: "1px solid #ddd", borderRadius: "8px" }}
       >
-    
+
         <div className="col-md-4 border-end bg-light p-3">
           <h5>Chats</h5>
           <ul className="list-group">
@@ -247,7 +247,7 @@ const Userlist = () => {
                   onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 />
                 <button className="p-2 m-2 btn-primary" onClick={sendMessage}>
-                  Send
+                  <IoMdSend />
                 </button>
               </div>
             </>
