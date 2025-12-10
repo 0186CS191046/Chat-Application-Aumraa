@@ -23,14 +23,20 @@ const Login = () => {
             "Content-Type":"application/json"
         }
     })
-    console.log("data-----",data.data)
+    console.log("data-----",data)
     let token = jwtDecode(data.data.token)
 
     console.log("token",token);
     sessionStorage.setItem("phone",token.phone)
 
     if(data.status === 200){
+      console.log("__________");
+      
         navigate("/chat")
+    }else{
+navigate("/chat")
+console.log("jwdhuewgc ");
+
     }
   };
 
