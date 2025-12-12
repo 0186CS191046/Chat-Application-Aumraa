@@ -32,48 +32,48 @@ const onlineUsers = new Map();
 io.on("connection", (socket) => {
   console.log("New connection:", socket.id);
 
-  socket.on("register", (userPhone) => {
-    onlineUsers.set(userPhone, socket.id);
-    console.log(`${userPhone} is now online`);
+  socket.on("register", (userEmail) => {
+    onlineUsers.set(userEmail, socket.id);
+    console.log(`${userEmail} is now online`);
 
     socket.emit("online-users", Array.from(onlineUsers.keys()));
 
-    socket.broadcast.emit("user-joined", userPhone);
+    socket.broadcast.emit("user-joined", userEmail);
   });
 
-  socket.on("send-message", ({ senderPhone, receiverPhone, message }) => {
+  socket.on("send-message", ({ senderEmail, receiverEmail, message }) => {
     const payload = {
-      senderPhone,
-      receiverPhone,
+      senderEmail,
+      receiverEmail,
       message,
       createdAt: new Date().toISOString(),
     };
 
-    const receiverSocketId = onlineUsers.get(receiverPhone);
+    const receiverSocketId = onlineUsers.get(receiverEmail);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("receive-message", payload);
     }
 
-    const senderSocketId = onlineUsers.get(senderPhone);
+    const senderSocketId = onlineUsers.get(senderEmail);
     if (senderSocketId) {
       io.to(senderSocketId).emit("receive-message", payload);
     }
   });
 
   socket.on("disconnect", () => {
-    let disconnectedPhone = null;
+    let disconnectedEmail = null;
 
-    for (let [phone, id] of onlineUsers.entries()) {
+    for (let [email, id] of onlineUsers.entries()) {
       if (id === socket.id) {
-        disconnectedPhone = phone;
-        onlineUsers.delete(phone);
+        disconnectedEmail = email;
+        onlineUsers.delete(email);
         break;
       }
     }
 
-    if (disconnectedPhone) {
-      console.log(`${disconnectedPhone} went offline`);
-      io.emit("user-left", disconnectedPhone);
+    if (disconnectedEmail) {
+      console.log(`${disconnectedEmail} went offline`);
+      io.emit("user-left", disconnectedEmail);
     }
   });
 });

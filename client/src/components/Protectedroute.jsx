@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
 
 const ProtectedRoute = ({ children }) => {
-  const loggedInUserId = sessionStorage.getItem("phone"); 
+  const loggedInUserId = sessionStorage.getItem("email"); 
 
   if (!loggedInUserId) {
     return <Navigate to="/" replace />;

@@ -195,13 +195,13 @@ export const getConversationMessages = async (req, res) => {
   }
 }
 
-export const getUserByPhone = async(req,res) => {
+export const getUserByEmail = async(req,res) => {
   try {
-    const {phone} = req.query;
-    if(!phone){
+    const {email} = req.query;
+    if(!email){
       return res.status(400).json({ message: "Missing required fields!"})
     }
-    const data = await User.findOne({where:{phone}})
+    const data = await User.findOne({where:{email}})
     return res.status(200).json({ message: "User fetched successfully!", data })
   } catch (error) {
     return res.status(500).json({ message: "Something went wrong!", error: error.message })

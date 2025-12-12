@@ -27,7 +27,7 @@ const Login = () => {
     let token = jwtDecode(data.data.token)
 
     console.log("token",token);
-    sessionStorage.setItem("phone",token.phone)
+    sessionStorage.setItem("email",token.email)
 
     if(data.status === 200){
       console.log("__________");

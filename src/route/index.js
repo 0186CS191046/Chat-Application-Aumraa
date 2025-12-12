@@ -1,6 +1,6 @@
 import express from "express";
 import { register, login, sendMessage, getAllUsers, getAllConversations, getAllMessages, 
-    getConversationMessages,getUserByPhone } from "../controllers/index";
+    getConversationMessages,getUserByEmail} from "../controllers/index";
 
 const router = express.Router();
 
@@ -11,6 +11,6 @@ router.get("/get-all-conversations", getAllConversations);
 router.get("/get-all-messages", getAllMessages);
 router.post("/send-message", sendMessage);
 router.get("/get-received-messages", getConversationMessages);
-router.get("/get-user-by-phone",getUserByPhone)
+router.get("/get-user-by-email",getUserByEmail)
 
 export default router;
