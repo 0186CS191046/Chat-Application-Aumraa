@@ -1,10 +1,8 @@
-import React, { useEffect, useState, useRef } from "react";
-import { IoMdSend } from "react-icons/io";
-import { MdEmojiEmotions } from "react-icons/md";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { socket } from "../config/socket";
 import { apiurl } from "../config/config";
-import EmojiPicker from "emoji-picker-react";
+import ChatWindow from "./ChatWindow";
 
 const Userlist = () => {
   const [users, setUsers] = useState([]);
@@ -13,21 +11,11 @@ const Userlist = () => {
   const [messageToBeSend, setMessageToBeSend] = useState("");
   const [currUser, setCurrUser] = useState({});
   const [onlineUsers, setOnlineUsers] = useState(new Set());
-  const [showEmoji, setShowEmoji] = useState(false);
+  const [groups, setGroups] = useState([]);
+  const [selectedGroup, setSelectedGroup] = useState(null)
 
-  const messagesEndRef = useRef(null);
-  const emojiPickerRef = useRef(null);
   const loggedInUserEmail = sessionStorage.getItem("email");
-
-  // Scroll to bottom when new messages arrive
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
+  const token = sessionStorage.getItem("token")
   // Socket listeners
   useEffect(() => {
     if (!socket.hasRegistered) {
@@ -35,84 +23,113 @@ const Userlist = () => {
       socket.hasRegistered = true;
     }
 
-    const updateOnline = (activeEmails) => setOnlineUsers(new Set(activeEmails));
+    const updateOnline = (activeEmails) =>
+      setOnlineUsers(new Set(activeEmails));
+
     socket.on("online-users", updateOnline);
-    socket.on("user-joined", (email) => setOnlineUsers((prev) => new Set(prev).add(email)));
-    socket.on("user-left", (email) => {
+    socket.on("user-joined", (email) =>
+      setOnlineUsers((prev) => new Set(prev).add(email))
+    );
+    socket.on("user-left", (email) =>
       setOnlineUsers((prev) => {
         const copy = new Set(prev);
         copy.delete(email);
         return copy;
-      });
-    });
+      })
+    );
 
-    const handleReceiveMessage = ({ senderEmail, receiverEmail, message, createdAt }) => {
-      if (senderEmail === loggedInUserEmail) return;
+    // const handleReceiveMessage = ({
+    //   senderEmail,
+    //   receiverEmail,
+    //   message,
+    //   createdAt,
+    // }) => {
+    //   if (senderEmail === loggedInUserEmail) return;
 
-      const chatPartnerEmail = selectedUser?.email;
-      const isForCurrentChat =
-        chatPartnerEmail &&
-        (senderEmail === chatPartnerEmail || receiverEmail === chatPartnerEmail);
+    //   if (
+    //     selectedUser &&
+    //     (senderEmail === selectedUser.email ||
+    //       receiverEmail === selectedUser.email)
+    //   ) {
+    //     setMessages((prev) => [
+    //       ...prev,
+    //       { senderEmail, receiverEmail, message, createdAt },
+    //     ]);
+    //   }
+    // };
 
-      if (isForCurrentChat) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            senderEmail,
-            receiverEmail: receiverEmail || loggedInUserEmail,
-            message,
-            createdAt: createdAt || new Date(),
-          },
-        ]);
-      }
-    };
+    const handleReceiveMessage = (msg) => {
+  if (!selectedUser) return;
+
+  if (
+    msg.senderEmail === selectedUser.email ||
+    msg.receiverEmail === selectedUser.email
+  ) {
+    setMessages((prev) => [...prev, msg]);
+  }
+};
+
+     const handleReceiveGroupMessage = (msg) => {
+    if (!selectedGroup) return;
+    if (msg.groupId !== selectedGroup.id) return;
+
+    setMessages((prev) => [...prev, msg]);
+  };
 
     socket.on("receive-message", handleReceiveMessage);
-
+socket.on("receive-group-message",handleReceiveGroupMessage)
     return () => {
       socket.off("receive-message", handleReceiveMessage);
+      socket.off("receive-group-message",handleReceiveGroupMessage)
       socket.off("online-users", updateOnline);
       socket.off("user-joined");
       socket.off("user-left");
     };
-  }, [selectedUser, loggedInUserEmail]);
+  }, [selectedUser, selectedGroup, loggedInUserEmail]);
 
-  // Fetch users + current user
+  // Fetch users
   useEffect(() => {
     const fetchUsers = async () => {
-      try {
-        const [usersRes, currRes] = await Promise.all([
-          axios.get(`${apiurl}/get-all-users`),
-          axios.get(`${apiurl}/get-user-by-email?email=${loggedInUserEmail}`),
-        ]);
-        setUsers(usersRes.data.data);
-        setCurrUser(currRes.data.data);
-      } catch (err) {
-        console.error(err);
-      }
+      const [usersRes, currRes, group] = await Promise.all([
+        axios.get(`${apiurl}/get-all-users`),
+        axios.get(`${apiurl}/get-user-by-email?email=${loggedInUserEmail}`),
+        axios.get(`${apiurl}/groups`, { headers: { "Authorization": `Bearer ${token}` } })
+      ]);
+      setUsers(usersRes.data.data);
+      setCurrUser(currRes.data.data);
+      console.log("____", group.data.data);
+
+      setGroups(group.data.data)
     };
     fetchUsers();
   }, [loggedInUserEmail]);
 
-  // Fetch chat history
   const fetchMessages = async (receiverId) => {
     if (!currUser.id) return;
-    try {
-      const res = await axios.get(
-        `${apiurl}/get-received-messages?userId1=${currUser.id}&userId2=${receiverId}`
-      );
-      setMessages(res.data || []);
-    } catch (err) {
-      console.error("Error fetching messages:", err);
-    }
+    const res = await axios.get(
+      `${apiurl}/get-received-messages?userId1=${currUser.id}&userId2=${receiverId}`
+    );
+    console.log("res--------", res.data);
+
+    setMessages(res.data || []);
   };
 
   const handleUserClick = (user) => {
     setSelectedUser(user);
+    setSelectedGroup(null)
     fetchMessages(user.id);
   };
 
-  // Send message
+  const handleGroupClick = (group) => {
+    setSelectedGroup(group);
+    setSelectedUser(null); // close 1-to-1 chat
+    setMessages([]);
+    socket.emit("join-group", { groupId: group.id });
+    console.log("++++++",group.id);
+    
+    fetchGroupMessages(group.id)
+  };
+
   const sendMessage = async () => {
     if (!messageToBeSend.trim() || !selectedUser) return;
 
@@ -124,179 +141,134 @@ const Userlist = () => {
       createdAt: new Date(),
     };
 
-    setMessages((prev) => [...prev, newMsg]);
-
     socket.emit("send-message", {
       senderEmail: loggedInUserEmail,
       receiverEmail: selectedUser.email,
       message: messageToBeSend,
     });
 
-    try {
-      await axios.post(`${apiurl}/send-message`, {
-        senderId: currUser.id,
-        receiverId: selectedUser.id,
-        message: messageToBeSend,
-      });
-    } catch (err) {
-      console.error("Message save error:", err);
-    }
+    await axios.post(`${apiurl}/send-message`, {
+      senderId: currUser.id,
+      receiverId: selectedUser.id,
+      message: messageToBeSend,
+    });
 
     setMessageToBeSend("");
-    setShowEmoji(false); // close picker after send
   };
 
-  // Emoji handling
-  const onEmojiClick = (emojiData) => {
-    setMessageToBeSend((prev) => prev + emojiData.emoji);
-    // optional: keep picker open after selecting
-    // setShowEmoji(true);
-  };
+  const sendGroupMessage = async () => {
+    if (!messageToBeSend.trim() || !selectedGroup) return;
 
-  const toggleEmojiPicker = () => setShowEmoji((prev) => !prev);
-
-  // Close picker when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) {
-        setShowEmoji(false);
-      }
+    const newMsg = {
+      senderEmail: loggedInUserEmail,
+      groupId: selectedGroup.id,
+      senderId: currUser.id,
+      message: messageToBeSend,
+      createdAt: new Date(),
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
-  const formatTime = (time) =>
-    new Date(time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    // setMessages((prev) => [...prev, newMsg]);
 
-  const filteredUsers = users.filter((u) => u.email !== loggedInUserEmail);
+    socket.emit("send-group-message", {
+      groupId: selectedGroup.id,
+      senderEmail: loggedInUserEmail,
+      message: messageToBeSend
+    });
+
+    await axios.post(`${apiurl}/send-message`, {
+      senderId: currUser.id,
+      groupId: selectedGroup.id,
+      message: messageToBeSend,
+    });
+
+    setMessageToBeSend("");
+  };
+
+  const fetchGroupMessages = async (groupId) => {
+    console.log("group0d",groupId);
+    
+    const res = await axios.get(
+      `${apiurl}/received-group-messages?groupId=${groupId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setMessages(res.data.data || []);
+  };
+
+  const filteredUsers = users.filter(
+    (u) => u.email !== loggedInUserEmail
+  );
 
   return (
     <div className="container mt-4">
-      <div
-        className="row shadow-sm"
-        style={{ height: "85vh", borderRadius: "12px", overflow: "hidden" }}
-      >
-        {/* ---------- USER LIST ---------- */}
+      <div className="row shadow-sm" style={{ height: "85vh" }}>
+        {/* USER LIST */}
         <div className="col-md-4 bg-light border-end p-3">
-          <h5 className="mb-3">Chats</h5>
+          <h5>Chats</h5>
           <ul className="list-group">
             {filteredUsers.map((user) => (
               <li
                 key={user.email}
-                className={`list-group-item d-flex justify-content-between align-items-center ${
-                  selectedUser?.email === user.email ? "active" : ""
-                }`}
-                style={{ cursor: "pointer" }}
+                className={`list-group-item ${selectedUser?.email === user.email ? "active" : ""
+                  }`}
                 onClick={() => handleUserClick(user)}
+                style={{ cursor: "pointer" }}
               >
-                <strong>{user.name}</strong>
+                {user.name}
                 {onlineUsers.has(user.email) && (
-                  <span className="badge bg-success rounded-pill">Online</span>
+                  <span className="badge bg-success float-end">
+                    Online
+                  </span>
                 )}
               </li>
             ))}
           </ul>
+          <h5>Group Chats</h5>
+
+          <ul className="list-group">
+            {groups.map((group) => (
+              <li
+                key={group.id}
+                className={`list-group-item ${selectedGroup?.id === group.id ? "active" : ""
+                  }`}
+                onClick={() => handleGroupClick(group)}
+                style={{ cursor: "pointer" }}
+              >
+                {group.name}
+              </li>
+            ))}
+          </ul>
+
         </div>
 
-        {/* ---------- CHAT AREA ---------- */}
-        <div className="col-md-8 d-flex flex-column bg-white">
-          {selectedUser ? (
-            <>
-              {/* Header */}
-              <div className="border-bottom p-3">
-                <h5 className="mb-0">{selectedUser.name}</h5>
-              </div>
 
-              {/* Messages */}
-              <div
-                className="flex-grow-1 p-3"
-                style={{
-                  height: "calc(100vh - 180px)",
-                  overflowY: "auto",
-                  backgroundColor: "#f5f5f5",
-                }}
-              >
-                {messages?.map((msg, idx) => {
-                  const isSender =
-                    msg.senderEmail === loggedInUserEmail || msg.senderId === currUser.id;
+        {/* CHAT WINDOW */}
 
-                  return (
-                    <div
-                      key={idx}
-                      className="my-3 d-flex"
-                      style={{ justifyContent: isSender ? "flex-end" : "flex-start" }}
-                    >
-                      <div
-                        style={{
-                          maxWidth: "70%",
-                        }}
-                      >
-                        <div
-                          className="p-3 rounded-3 text-white shadow-sm"
-                          style={{
-                            backgroundColor: isSender ? "#0d6efd" : "#28a745",
-                            wordBreak: "break-word",
-                          }}
-                        >
-                          {msg.message}
-                        </div>
-                        <small className="text-muted d-block text-end mt-1">
-                          {formatTime(msg.createdAt)}
-                        </small>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
+        {/* <div className="col-md-8 d-flex flex-column bg-white">
+          <ChatWindow
+            selectedUser={selectedUser}
+            messages={messages}
+            setMessages={setMessages}
+            messageToBeSend={messageToBeSend}
+            setMessageToBeSend={setMessageToBeSend}
+            sendMessage={sendMessage}
+            loggedInUserEmail={loggedInUserEmail}
+            currUser={currUser}
+          />
 
-              {/* Input + Emoji + Send */}
-              <div className="p-3 border-top position-relative">
-                {/* Emoji Picker */}
-                {showEmoji && (
-                  <div
-                    ref={emojiPickerRef}
-                    style={{
-                      position: "absolute",
-                      bottom: "70px",
-                      left: "10px",
-                      zIndex: 1000,
-                    }}
-                  >
-                    <EmojiPicker onEmojiClick={onEmojiClick} />
-                  </div>
-                )}
+        </div> */}
 
-                <div className="input-group">
-                  <button
-                    className="btn btn-outline-secondary"
-                    type="button"
-                    onClick={toggleEmojiPicker}
-                  >
-                    <MdEmojiEmotions size={24} />
-                  </button>
-
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Type a message..."
-                    value={messageToBeSend}
-                    onChange={(e) => setMessageToBeSend(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                  />
-
-                  <button className="btn btn-primary" onClick={sendMessage}>
-                    <IoMdSend size={22} />
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="d-flex align-items-center justify-content-center h-100">
-              <h5 className="text-muted">Select a user to start chatting</h5>
-            </div>
-          )}
+ <div className="col-md-8 d-flex flex-column bg-white">
+        <ChatWindow
+          selectedUser={selectedUser}
+          selectedGroup={selectedGroup}
+          messages={messages}
+          setMessages={setMessages}
+          messageToBeSend={messageToBeSend}
+          setMessageToBeSend={setMessageToBeSend}
+          sendMessage={selectedGroup ? sendGroupMessage : sendMessage}
+          loggedInUserEmail={loggedInUserEmail}
+          currUser={currUser}
+        />
         </div>
       </div>
     </div>
@@ -304,4 +276,3 @@ const Userlist = () => {
 };
 
 export default Userlist;
-

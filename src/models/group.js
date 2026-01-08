@@ -1,32 +1,29 @@
 import Sequelize from "sequelize";
 import { sequelize } from "../config/db";
  
-export const Conversation = sequelize.define(
-  "Conversation",
+export const Group = sequelize.define(
+  "Group",
   {
     id: {
       type: Sequelize.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    userId1: {
-      type: Sequelize.INTEGER,
+    name: {
+      type: Sequelize.STRING(255),
       allowNull: false,
     },
-    userId2: {
-      type: Sequelize.INTEGER,
+    createdBy: {
+      type: Sequelize.STRING(255),
       allowNull: false,
     },
- 
+    createdAt: {
+      type: Sequelize.DATE(),
+      defaultValue:Sequelize.NOW
+    },
   },
   {
     freezeTableName: true,
-       indexes: [
-  {
-    unique: true,
-    fields: ["userId1", "userId2"]
-  }
-]
   }
 );
  
