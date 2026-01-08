@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import {useNavigate} from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import axios from "axios";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import { apiurl } from "../config/config";
 
 const Login = () => {
@@ -11,43 +11,48 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate()
-  const handleLogin = async(e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     console.log("Email:", email);
     console.log("Password:", password);
 
-    const data = await axios.post(`${apiurl}/login`,{
-        email,password
-    },{
-        headers:{
-            "Content-Type":"application/json"
-        }
+    const data = await axios.post(`${apiurl}/login`, {
+      email, password
+    }, {
+      headers: {
+        "Content-Type": "application/json"
+      }
     })
-    console.log("data-----",data.data)
+    console.log("data-----", data)
     let token = jwtDecode(data.data.token)
 
-    console.log("token",token);
-    sessionStorage.setItem("id",token.id)
+    console.log("token", token);
+    sessionStorage.setItem("email", token.email)
+    sessionStorage.setItem("token", data.data.token)
+    if (data.status === 200) {
+      console.log("__________");
 
-    if(data.status === 200){
-        navigate("/chat")
+      navigate("/chat")
+    } else {
+      navigate("/chat")
+      console.log("jwdhuewgc ");
+
     }
   };
 
   return (
     <div className="container vh-100 d-flex align-items-center justify-content-center">
       <div className="row w-75 shadow-lg rounded" style={{ minHeight: "400px" }}>
-        {/* Left: Logo */}
+
         <div className="col-md-6 d-flex align-items-center justify-content-center bg-light">
           <img
-            src="https://practitioner-jv2w.vercel.app/assets/logo1-D8CjoSWO.png"
+            src="https://res.cloudinary.com/de2ebuywy/image/upload/v1766753698/uploads/lcufl2v041oxaukq4ot8.webp"
             alt="logo"
             className="img-fluid"
             style={{ maxHeight: "200px" }}
           />
         </div>
 
-        {/* Right: Login Form */}
         <div className="col-md-6 p-4 d-flex flex-column justify-content-center">
           <h2 className="fw-bold">Welcome Back</h2>
           <p className="text-muted">Login to continue</p>

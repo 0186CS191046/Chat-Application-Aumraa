@@ -1,8 +1,8 @@
 import Sequelize from "sequelize";
 import { sequelize } from "../config/db.js";
  
-export const User = sequelize.define(
-  "User",
+export const Group = sequelize.define(
+  "Group",
   {
     id: {
       type: Sequelize.INTEGER,
@@ -13,23 +13,13 @@ export const User = sequelize.define(
       type: Sequelize.STRING(255),
       allowNull: false,
     },
-    email: {
-      type: Sequelize.STRING(255),
-      allowNull: false,
-      unique:true
-    },
-    phone:{
-        type: Sequelize.STRING(255),
-      allowNull: false,
-      unique:true
-    },
-    password: {
+    createdBy: {
       type: Sequelize.STRING(255),
       allowNull: false,
     },
-    token: {
-      type: Sequelize.TEXT(),
-      defaultValue:""
+    createdAt: {
+      type: Sequelize.DATE(),
+      defaultValue:Sequelize.NOW
     },
   },
   {

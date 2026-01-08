@@ -1,5 +1,5 @@
 import { Sequelize } from "sequelize";
-import  config from "./index";
+import  config from "./index.js";
  
 console.log("config", config);
  
@@ -12,7 +12,14 @@ const sequelize = new Sequelize(
     port: 5432,
     dialect: "postgres",
     logging: false,
-  }
+    dialectOptions:{
+        ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    }
+  },
+  
 );
  
 const connectToDB = async () => {

@@ -1,32 +1,29 @@
 import Sequelize from "sequelize";
 import { sequelize } from "../config/db.js";
  
-export const Conversation = sequelize.define(
-  "Conversation",
+export const GroupMember = sequelize.define(
+  "GroupMember",
   {
     id: {
       type: Sequelize.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    userId1: {
+    groupId: {
       type: Sequelize.INTEGER,
       allowNull: false,
     },
-    userId2: {
+    userId: {
       type: Sequelize.INTEGER,
       allowNull: false,
     },
- 
+role: {
+      type: Sequelize.STRING,
+      defaultValue:"member"
+    },
   },
   {
     freezeTableName: true,
-       indexes: [
-  {
-    unique: true,
-    fields: ["userId1", "userId2"]
-  }
-]
   }
 );
  
