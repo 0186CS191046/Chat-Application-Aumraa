@@ -1,10 +1,10 @@
-import { User, Message, Conversation } from "../models";
+import { User, Message, Conversation } from "../models/index.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import config from "../config";
+import config from "../config/index.js";
 import { Op, where } from "sequelize";
-import { Group } from "../models/group";
-import { GroupMember } from "../models/group-member";
+import { Group } from "../models/group.js";
+import { GroupMember } from "../models/group-member.js";
 
 export const register = async (req, res) => {
   try {

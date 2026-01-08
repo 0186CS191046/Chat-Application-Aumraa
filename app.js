@@ -1,9 +1,9 @@
 import express from "express";
-import config from "./src/config";
+import config from "./src/config/index.js";
 import http from "http";
 import { Server } from "socket.io";
-import { connectToDB } from "./src/config/db";
-import routes from "./src/route/index";
+import { connectToDB } from "./src/config/db.js";
+import routes from "./src/route/index.js";
 import morgan from "morgan";
 import cors from "cors";
 

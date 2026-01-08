@@ -1,8 +1,8 @@
-import { User } from "./user";
-import { Conversation } from "./conversation";
-import { Message } from "./messages";
-import { Group } from "./group";
-import { GroupMember } from "./group-member";
+import { User } from "./user.js";
+import { Conversation } from "./conversation.js";
+import { Message } from "./messages.js";
+import { Group } from "./group.js";
+import { GroupMember } from "./group-member.js";
 
 /* Conversation ↔ Users */
 Conversation.belongsTo(User, { foreignKey: "userId1", as: "user1" });

@@ -1,5 +1,5 @@
 import Sequelize from "sequelize";
-import { sequelize } from "../config/db";
+import { sequelize } from "../config/db.js";
  
 export const Conversation = sequelize.define(
   "Conversation",

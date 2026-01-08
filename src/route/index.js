@@ -1,8 +1,8 @@
 import express from "express";
 import { register, login, sendMessage, getAllUsers, getAllConversations, getAllMessages, 
     getConversationMessages,getUserByEmail,addMembersToGroup,getGroupMembers,getMyGroups,createGroup,
-    getGroupMessages} from "../controllers/index";
-import { auth } from "../middleware";
+    getGroupMessages} from "../controllers/index.js";
+import { auth } from "../middleware/index.js";
 const router = express.Router();
 
 router.post("/register", register);

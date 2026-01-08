@@ -1,5 +1,5 @@
 import { Sequelize } from "sequelize";
-import  config from "./index";
+import  config from "./index.js";
  
 console.log("config", config);
  
